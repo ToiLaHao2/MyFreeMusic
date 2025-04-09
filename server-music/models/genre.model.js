@@ -24,4 +24,4 @@ const initGenre = (sequelize) => {
     );
     return Genre;
 };
-module.exports = initGenre;
+module.exports = { Genre, initGenre };

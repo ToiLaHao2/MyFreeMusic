@@ -30,4 +30,4 @@ const initUser = (sequelize) => {
     return User;
 };
 
-module.exports = initUser;
+module.exports = { User, initUser };

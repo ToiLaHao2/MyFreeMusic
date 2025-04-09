@@ -41,4 +41,4 @@ const initSong = (sequelize) => {
     return Song;
 };
 
-module.exports = initSong;
+module.exports = { Song, initSong };

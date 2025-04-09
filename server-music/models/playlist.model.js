@@ -30,4 +30,4 @@ const initPlaylist = (sequelize) => {
     return Playlist;
 };
 
-module.exports = initPlaylist;
+module.exports = { Playlist, initPlaylist };

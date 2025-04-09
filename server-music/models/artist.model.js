@@ -26,4 +26,4 @@ const initArtist = (sequelize) => {
 
     return Artist;
 };
-module.exports = initArtist;
+module.exports = { Artist, initArtist };
