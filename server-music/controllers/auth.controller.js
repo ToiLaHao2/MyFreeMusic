@@ -3,6 +3,7 @@ const {
     VerifiedToken,
     CreateAccessToken,
     CreateRefreshToken,
+    HashPassword,
 } = require("../util/authHelpers");
 const { sendSuccess, sendError } = require("../util/response");
 const { User } = require("../models/user.model");
@@ -106,9 +107,38 @@ async function logout(req, res) {
     }
 }
 
-async function changePassword(req, res) {}
+async function changePassword(req, res) {
+    try {
+        const { user_id, old_password, new_password } = req.body;
+        const user = await User.findOne({ where: { id: user_id } });
+        if (!user) {
+            return sendError(res, 404, "Người dùng không tồn tại.");
+        }
+        // Kiểm tra xem mật khẩu cũ có đúng không
+        const isPasswordValid = await CompareHashPassword(
+            old_password,
+            user.user_hash_password
+        );
+        if (!isPasswordValid) {
+            return sendError(res, 401, "Mật khẩu cũ không đúng.");
+        }
+        // Cập nhật mật khẩu mới
+        const hashedPassword = await HashPassword(new_password);
+        user.user_hash_password = hashedPassword;
+        await user.save();
+        // Trả về phản hồi thành công
+        return sendSuccess(res, 200, {
+            message: "Đổi mật khẩu thành công.",
+        });
+    } catch (error) {
+        logger.error("Error during change password: ", error);
+        return sendError(res, 500, "Lỗi không xác định.");
+    }
+}
 
 module.exports = {
     refreshAccessToken,
     login,
+    logout,
+    changePassword,
 };
