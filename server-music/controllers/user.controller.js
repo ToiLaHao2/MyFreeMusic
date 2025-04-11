@@ -20,6 +20,7 @@ async function GetUserInformation(req, res) {
         return sendSuccess(res, 200, {
             message: "Lấy thông tin người dùng thành công.",
             user: user,
+            token_near_expired: req.token_near_expire || false,
         });
     } catch (error) {
         logger.error("Lỗi khi lấy thông tin người dùng:", error);
@@ -46,6 +47,7 @@ async function UpdateUserInformation(req, res) {
         );
         return sendSuccess(res, 200, {
             message: "Cập nhật thông tin người dùng thành công.",
+            token_near_expired: req.token_near_expire || false,
         });
     } catch (error) {
         logger.error("Lỗi khi cập nhật thông tin người dùng:", error);
