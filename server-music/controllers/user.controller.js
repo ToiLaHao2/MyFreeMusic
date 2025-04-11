@@ -92,12 +92,10 @@ async function ChangeUserAvatar(req, res) {
                     user.user_profile_picture = result.secure_url;
                     await user.save();
 
-                    sendSuccess(
-                        res,
-                        "Avatar uploaded successfully",
-                        user,
-                        "UploadAvatar"
-                    );
+                    sendSuccess(res, "Avatar uploaded successfully", {
+                        user: user,
+                        token_near_expired: req.token_near_expire || false,
+                    });
                 }
             )
             .end(file.buffer); // Đẩy dữ liệu ảnh lên Cloudinary
