@@ -14,6 +14,11 @@ const initSong = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: false,
             },
+            source: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                values: ["DEVICE", "YOUTUBE"],
+            },
             fileUrl: DataTypes.STRING,
             coverUrl: DataTypes.STRING,
             views: {

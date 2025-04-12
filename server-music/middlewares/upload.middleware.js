@@ -1,17 +1,20 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
-// Tạo thư mục đích
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const isImage = file.mimetype.startsWith("image/");
         const isAudio = file.mimetype.startsWith("audio/");
+        let folder = "songs-storage/temp"; // mặc định cho mọi file
 
-        let folder = "uploads/others";
-        if (isImage) folder = "uploads/images";
-        if (isAudio) folder = "uploads/songs";
+        if (isAudio) folder = "songs-storage/original";
 
-        cb(null, folder); // tạo tự động nếu chưa có
+        // Tạo thư mục nếu chưa có
+        if (!fs.existsSync(folder)) {
+            fs.mkdirSync(folder, { recursive: true });
+        }
+
+        cb(null, folder);
     },
     filename: function (req, file, cb) {
         const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -19,7 +22,6 @@ const storage = multer.diskStorage({
     },
 });
 
-// Bộ lọc loại file
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ["audio/mpeg", "audio/mp3", "image/jpeg", "image/png"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -29,11 +31,10 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Tạo middleware
 const upload = multer({
     storage,
     fileFilter,
-    limits: { fileSize: 20 * 1024 * 1024 }, // Giới hạn 20MB
+    limits: { fileSize: 20 * 1024 * 1024 },
 });
 
 module.exports = upload;

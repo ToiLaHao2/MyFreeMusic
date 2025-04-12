@@ -8,61 +8,62 @@ const { sendError, sendSuccess } = require("../util/response");
 const cloudinary = require("../config/cloudinary.config");
 
 // Add song from device
+const fs = require("fs");
+const path = require("path");
+
 async function AddNewSongFromDevice(req, res) {
     try {
         const { songTitle, songGenreId, songArtistId } = req.body;
-        const songFile = req.file;
-        const songCover = req.file;
+        const songFile = req.files?.songFile?.[0];
+        const songCover = req.files?.songCover?.[0];
+
         if (!songFile || !songCover) {
             return sendError(res, 400, "Thiếu file bài hát hoặc ảnh bìa.");
         }
-        // Check if the song already exists
+
         const existingSong = await Song.findOne({
             where: { title: songTitle },
         });
-        if (existingSong) {
-            return sendError(res, 400, "Bài hát đã tồn tại.");
-        }
-        // Check if the genre exists
+        if (existingSong) return sendError(res, 400, "Bài hát đã tồn tại.");
+
         const genre = await Genre.findOne({ where: { id: songGenreId } });
-        if (!genre) {
-            return sendError(res, 400, "Thể loại không tồn tại.");
-        }
-        // Check if the artist exists
+        if (!genre) return sendError(res, 400, "Thể loại không tồn tại.");
+
         const artist = await Artist.findOne({ where: { id: songArtistId } });
-        if (!artist) {
-            return sendError(res, 400, "Nghệ sĩ không tồn tại.");
-        }
-        // Check if the song file is valid
-        const validFileTypes = ["audio/mpeg", "audio/wav", "audio/ogg"];
-        if (!validFileTypes.includes(songFile.mimetype)) {
+        if (!artist) return sendError(res, 400, "Nghệ sĩ không tồn tại.");
+
+        const validAudio = ["audio/mpeg", "audio/mp3", "audio/wav"];
+        if (!validAudio.includes(songFile.mimetype)) {
             return sendError(res, 400, "File bài hát không hợp lệ.");
         }
-        // Check if the cover file is valid
-        const validCoverTypes = ["image/jpeg", "image/png", "image/gif"];
-        if (!validCoverTypes.includes(songCover.mimetype)) {
+
+        const validImage = ["image/jpeg", "image/png"];
+        if (!validImage.includes(songCover.mimetype)) {
             return sendError(res, 400, "File ảnh bìa không hợp lệ.");
         }
-        // Send cover file to cloudinary and receive URL
-        let coverUrl = null;
-        await cloudinary.uploader.upload(
-            songCover.path,
-            { folder: "music_app/covers" },
-            async (error, result) => {
-                if (error) {
-                    logger.error("Lỗi khi upload ảnh bìa:", error);
-                    return sendError(res, 500, "Lỗi hệ thống.");
-                }
-                coverUrl = result.secure_url;
-            }
-        );
-        // Create new song
+
+        // ✅ Upload ảnh bìa lên Cloudinary
+        const result = await cloudinary.uploader.upload(songCover.path, {
+            folder: "music_app/covers",
+        });
+        const coverUrl = result.secure_url;
+
+        // ✅ Xoá file ảnh tạm local
+        fs.unlinkSync(songCover.path);
+
+        // ✅ Tạo bài hát mới
         const newSong = await Song.create({
             title: songTitle,
-            fileUrl: songFile.path,
+            fileUrl: songFile.path, // đã lưu trong songs-storage/original
             coverUrl: coverUrl,
             genre_id: songGenreId,
             artist_id: songArtistId,
+            source: "DEVICE",
+        });
+
+        return res.status(201).json({
+            message: "Thêm bài hát thành công!",
+            data: newSong,
         });
     } catch (error) {
         logger.error("Lỗi khi thêm bài hát từ thiết bị:", error);
