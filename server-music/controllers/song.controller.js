@@ -6,12 +6,14 @@ const { Song } = require("../models/song.model");
 const logger = require("../util/logger");
 const { sendError, sendSuccess } = require("../util/response");
 const cloudinary = require("../config/cloudinary.config");
-const ytdl = require("ytdl-core");
+const { exec } = require("child_process");
+const { v4: uuidv4 } = require("uuid");
 
 // Add song from device
 const fs = require("fs");
 const path = require("path");
 const { convertToHLS } = require("../util/hlsHelper");
+const { console } = require("inspector");
 
 async function AddNewSongFromDevice(req, res) {
     try {
@@ -97,87 +99,65 @@ async function AddNewSongFromDevice(req, res) {
 async function AddNewSongFromYtUrl(req, res) {
     try {
         const { ytbURL } = req.body;
-        if (!ytbURL) {
-            return sendError(res, 400, "Thiếu URL Youtube.");
-        }
-        // Validate URL (có thể dùng thư viện như validator.js hoặc regex)
-        const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-        if (!regex.test(ytbURL)) {
-            return sendError(res, 400, "URL không hợp lệ.");
-        }
-        // Lấy thông tin video từ Youtube (có thể dùng thư viện youtube-dl hoặc ytdl-core)
-        const info = await ytdl.getInfo(ytbURL);
-        const title = info.videoDetails.title;
-        const thumbnailUrl = info.videoDetails.thumbnails[0].url;
-        const videoId = info.videoDetails.videoId;
-        // Lấy thông tin artist
-        const artistName = info.videoDetails.author.name;
-        const artist = await Artist.findOne({
-            where: { name: artistName },
-        });
-        if (!artist) {
-            // thêm thông tin artist vào cơ sở dữ liệu nếu không tồn tại
-            // Có thể thêm artist_id vào bài hát sau này
-            // tạo một artist mặc định nếu không tìm thấy
-            // artist = await Artist.create({
-            //     name: artistName,
-            //     avatarUrl: thumbnailUrl,
-            //     source: "YOUTUBE",
-            // });
-            // Hoặc có thể tạo một artist mặc định nếu không tìm thấy
-            artist = await Artist.create({
-                name: "Artist Default",
-                profile_picture_url: thumbnailUrl,
-                biography: "YOUTUBE",
-            });
-            // return sendError(res, 404, "Nghệ sĩ không tồn tại.");
-        }
-        // Lấy thông tin genre
-        const genreName = info.videoDetails.category;
-        const genre = await Genre.findOne({
-            where: { name: genreName },
-        });
-        if (!genre) {
-            // thêm thông tin genre vào cơ sở dữ liệu nếu không tồn tại
-            // Có thể thêm genre_id vào bài hát sau này
-            // tạo một genre mặc định nếu không tìm thấy
-            // genre = await Genre.create({
-            //     name: genreName,
-            //     source: "YOUTUBE",
-            // });
-            // Hoặc có thể tạo một genre mặc định nếu không tìm thấy
-            genre = await Genre.create({
-                name: "Genre Default",
-                description: "YOUTUBE",
-            });
-            // return sendError(res, 404, "Thể loại không tồn tại.");
-        }
+        if (!ytbURL) return sendError(res, 400, "Thiếu URL Youtube.");
+
+        // Lấy metadata qua yt-dlp
+        const infoJson = await fetch(
+            `https://noembed.com/embed?url=${ytbURL}`
+        ).then((res) => res.json());
+        const title = infoJson.title;
+        const thumbnailUrl = infoJson.thumbnail_url;
+        const artistName = infoJson.author_name;
+
+        // Tải file mp3
+        const filePath = await downloadYoutubeAudio(ytbURL);
+
+        // 🔽 Chuyển đổi sang HLS (.m3u8)
         const slug = title
             .toLowerCase()
             .replace(/[^a-z0-9]/g, "-")
             .replace(/-+/g, "-");
+
         const hlsOutputPath = `songs-storage/hls/${slug}`;
-        await convertToHLS(`ytb://video/${videoId}`, hlsOutputPath);
-        // Upload thumbnail to Cloudinary
+        await convertToHLS(filePath, hlsOutputPath);
+
+        // Upload ảnh bìa lên cloudinary
         const result = await cloudinary.uploader.upload(thumbnailUrl, {
             folder: "music_app/covers",
         });
-        const coverUrl = result.secure_url;
-        // Lưu bài hát vào cơ sở dữ liệu
+
+        const artist = await Artist.findOrCreate({
+            where: { name: artistName },
+            defaults: {
+                name: artistName,
+                profile_picture_url: thumbnailUrl,
+                biography: "Tự động từ Youtube",
+            },
+        });
+
+        const genre = await Genre.findOrCreate({
+            where: { name: "Youtube Auto" },
+            defaults: {
+                name: "Youtube Auto",
+                description: "Tự động từ Youtube",
+            },
+        });
+
         const newSong = await Song.create({
             title: title,
-            fileUrl: `${hlsOutputPath}/index.m3u8`,
-            coverUrl: coverUrl,
-            genre_id: genre.id,
-            artist_id: artist.id, // Có thể thêm artist sau
+            fileUrl: filePath,
+            coverUrl: result.secure_url,
+            genre_id: genre[0].id,
+            artist_id: artist[0].id,
             source: "YOUTUBE",
         });
+
         return sendSuccess(res, 200, {
-            message: "Thêm bài hát từ URL Youtube thành công.",
+            message: "Thêm bài hát từ Youtube thành công.",
             song: newSong,
         });
-    } catch (error) {
-        logger.error("Lỗi khi thêm bài hát từ URL Youtube:", error);
+    } catch (err) {
+        logger.error("Lỗi khi thêm bài hát từ Youtube:", err);
         return sendError(res, 500, "Lỗi hệ thống.");
     }
 }
@@ -375,6 +355,30 @@ async function FilterSongByGenre(req, res) {
         logger.error("Lỗi khi lọc bài hát theo thể loại:", error);
         return sendError(res, 500, "Lỗi hệ thống.");
     }
+}
+
+// Download Youtube audio
+
+async function downloadYoutubeAudio(url, outputDir = "songs-storage/original") {
+    return new Promise((resolve, reject) => {
+        const id = uuidv4();
+        const outputPath = path.join(outputDir, `${id}.mp3`);
+
+        // Tạo thư mục nếu chưa có
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        const command = `"./yt-dlp.exe" --ffmpeg-location "C:/ffmpeg/bin" -x --audio-format mp3 -o "${outputPath}" "${url}"`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error("YT-DLP error:", stderr);
+                return reject(error);
+            }
+            resolve(outputPath);
+        });
+    });
 }
 
 module.exports = {

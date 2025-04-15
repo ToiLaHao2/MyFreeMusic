@@ -1,0 +1,27 @@
+[2025-04-16 00:25:38] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:28:16] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:29:26] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:30:10] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:30:31] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:32:15] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:34:41] ERROR: Lỗi khi thêm bài hát từ URL Youtube: Could not extract functions
+[2025-04-16 00:41:23] ERROR: Lỗi khi thêm bài hát từ Youtube: downloadYoutubeAudio is not defined
+[2025-04-16 00:43:46] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: yt-dlp -x --audio-format mp3 -o "songs-storage\original\46c00556-3b78-4603-aff1-96fd1297b0c7.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+'yt-dlp' is not recognized as an internal or external command,
+operable program or batch file.
+
+[2025-04-16 00:44:45] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: yt-dlp -x --audio-format mp3 -o "songs-storage\original\915ac4dc-18f2-4d54-be51-924ecdbebd8d.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+'yt-dlp' is not recognized as an internal or external command,
+operable program or batch file.
+
+[2025-04-16 00:48:52] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: "./yt-dlp.exe" -x --audio-format mp3 -o "songs-storage\original\f46fecf1-965d-406c-b91a-9fac6d4fb61d.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+'"./yt-dlp.exe"' is not recognized as an internal or external command,
+operable program or batch file.
+
+[2025-04-16 00:49:17] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: "./yt-dlp.exe" -x --audio-format mp3 -o "songs-storage\original\f4bdd9d7-e6ce-42b4-a9aa-23d3dfed3752.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
+
+[2025-04-16 00:50:28] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: "./yt-dlp.exe" --ffmpeg-location "C:/ffmpeg/bin" -x --audio-format mp3 -o "songs-storage\original\c13c99d1-da93-45e0-a3cc-609e3494a8d8.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+WARNING: ffmpeg-location C:/ffmpeg/bin does not exist! Continuing without ffmpeg
+ERROR: expected string or bytes-like object
+
