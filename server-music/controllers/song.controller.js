@@ -6,10 +6,12 @@ const { Song } = require("../models/song.model");
 const logger = require("../util/logger");
 const { sendError, sendSuccess } = require("../util/response");
 const cloudinary = require("../config/cloudinary.config");
+const ytdl = require("ytdl-core");
 
 // Add song from device
 const fs = require("fs");
 const path = require("path");
+const { convertToHLS } = require("../util/hlsHelper");
 
 async function AddNewSongFromDevice(req, res) {
     try {
@@ -21,49 +23,70 @@ async function AddNewSongFromDevice(req, res) {
             return sendError(res, 400, "Thiếu file bài hát hoặc ảnh bìa.");
         }
 
-        const existingSong = await Song.findOne({
-            where: { title: songTitle },
-        });
-        if (existingSong) return sendError(res, 400, "Bài hát đã tồn tại.");
-
-        const genre = await Genre.findOne({ where: { id: songGenreId } });
-        if (!genre) return sendError(res, 400, "Thể loại không tồn tại.");
-
+        // ... kiểm tra artist, genre, validate file ...
         const artist = await Artist.findOne({ where: { id: songArtistId } });
-        if (!artist) return sendError(res, 400, "Nghệ sĩ không tồn tại.");
-
-        const validAudio = ["audio/mpeg", "audio/mp3", "audio/wav"];
-        if (!validAudio.includes(songFile.mimetype)) {
-            return sendError(res, 400, "File bài hát không hợp lệ.");
+        if (!artist) {
+            return sendError(res, 404, "Nghệ sĩ không tồn tại.");
+        }
+        const genre = await Genre.findOne({ where: { id: songGenreId } });
+        if (!genre) {
+            return sendError(res, 404, "Thể loại không tồn tại.");
+        }
+        const allowedTypes = [
+            "audio/mpeg",
+            "audio/mp3",
+            "image/jpeg",
+            "image/png",
+        ];
+        if (!allowedTypes.includes(songFile.mimetype)) {
+            return sendError(
+                res,
+                400,
+                "File không hợp lệ (chỉ nhận .mp3, .jpg, .png)"
+            );
+        }
+        if (!allowedTypes.includes(songCover.mimetype)) {
+            return sendError(
+                res,
+                400,
+                "File không hợp lệ (chỉ nhận .mp3, .jpg, .png)"
+            );
+        }
+        if (songFile.size > 20 * 1024 * 1024) {
+            return sendError(res, 400, "File quá lớn (tối đa 20MB).");
+        }
+        if (songCover.size > 5 * 1024 * 1024) {
+            return sendError(res, 400, "File ảnh bìa quá lớn (tối đa 5MB).");
         }
 
-        const validImage = ["image/jpeg", "image/png"];
-        if (!validImage.includes(songCover.mimetype)) {
-            return sendError(res, 400, "File ảnh bìa không hợp lệ.");
-        }
-
-        // ✅ Upload ảnh bìa lên Cloudinary
         const result = await cloudinary.uploader.upload(songCover.path, {
             folder: "music_app/covers",
         });
         const coverUrl = result.secure_url;
-
-        // ✅ Xoá file ảnh tạm local
         fs.unlinkSync(songCover.path);
 
-        // ✅ Tạo bài hát mới
+        // 🔥 Convert to HLS
+        const slug = songTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-")
+            .replace(/-+/g, "-");
+
+        const hlsOutputPath = `songs-storage/hls/${slug}`;
+        await convertToHLS(songFile.path, hlsOutputPath);
+
+        // ✅ Lưu dữ liệu
         const newSong = await Song.create({
             title: songTitle,
-            fileUrl: songFile.path, // đã lưu trong songs-storage/original
+            fileUrl: `${hlsOutputPath}/index.m3u8`,
             coverUrl: coverUrl,
             genre_id: songGenreId,
             artist_id: songArtistId,
             source: "DEVICE",
         });
 
-        return res.status(201).json({
-            message: "Thêm bài hát thành công!",
-            data: newSong,
+        return sendSuccess(res, 200, {
+            message: "Thêm bài hát thành công.",
+            song: newSong,
         });
     } catch (error) {
         logger.error("Lỗi khi thêm bài hát từ thiết bị:", error);
@@ -73,6 +96,86 @@ async function AddNewSongFromDevice(req, res) {
 // Add song from Youtube URL
 async function AddNewSongFromYtUrl(req, res) {
     try {
+        const { ytbURL } = req.body;
+        if (!ytbURL) {
+            return sendError(res, 400, "Thiếu URL Youtube.");
+        }
+        // Validate URL (có thể dùng thư viện như validator.js hoặc regex)
+        const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+        if (!regex.test(ytbURL)) {
+            return sendError(res, 400, "URL không hợp lệ.");
+        }
+        // Lấy thông tin video từ Youtube (có thể dùng thư viện youtube-dl hoặc ytdl-core)
+        const info = await ytdl.getInfo(ytbURL);
+        const title = info.videoDetails.title;
+        const thumbnailUrl = info.videoDetails.thumbnails[0].url;
+        const videoId = info.videoDetails.videoId;
+        // Lấy thông tin artist
+        const artistName = info.videoDetails.author.name;
+        const artist = await Artist.findOne({
+            where: { name: artistName },
+        });
+        if (!artist) {
+            // thêm thông tin artist vào cơ sở dữ liệu nếu không tồn tại
+            // Có thể thêm artist_id vào bài hát sau này
+            // tạo một artist mặc định nếu không tìm thấy
+            // artist = await Artist.create({
+            //     name: artistName,
+            //     avatarUrl: thumbnailUrl,
+            //     source: "YOUTUBE",
+            // });
+            // Hoặc có thể tạo một artist mặc định nếu không tìm thấy
+            artist = await Artist.create({
+                name: "Artist Default",
+                profile_picture_url: thumbnailUrl,
+                biography: "YOUTUBE",
+            });
+            // return sendError(res, 404, "Nghệ sĩ không tồn tại.");
+        }
+        // Lấy thông tin genre
+        const genreName = info.videoDetails.category;
+        const genre = await Genre.findOne({
+            where: { name: genreName },
+        });
+        if (!genre) {
+            // thêm thông tin genre vào cơ sở dữ liệu nếu không tồn tại
+            // Có thể thêm genre_id vào bài hát sau này
+            // tạo một genre mặc định nếu không tìm thấy
+            // genre = await Genre.create({
+            //     name: genreName,
+            //     source: "YOUTUBE",
+            // });
+            // Hoặc có thể tạo một genre mặc định nếu không tìm thấy
+            genre = await Genre.create({
+                name: "Genre Default",
+                description: "YOUTUBE",
+            });
+            // return sendError(res, 404, "Thể loại không tồn tại.");
+        }
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-")
+            .replace(/-+/g, "-");
+        const hlsOutputPath = `songs-storage/hls/${slug}`;
+        await convertToHLS(`ytb://video/${videoId}`, hlsOutputPath);
+        // Upload thumbnail to Cloudinary
+        const result = await cloudinary.uploader.upload(thumbnailUrl, {
+            folder: "music_app/covers",
+        });
+        const coverUrl = result.secure_url;
+        // Lưu bài hát vào cơ sở dữ liệu
+        const newSong = await Song.create({
+            title: title,
+            fileUrl: `${hlsOutputPath}/index.m3u8`,
+            coverUrl: coverUrl,
+            genre_id: genre.id,
+            artist_id: artist.id, // Có thể thêm artist sau
+            source: "YOUTUBE",
+        });
+        return sendSuccess(res, 200, {
+            message: "Thêm bài hát từ URL Youtube thành công.",
+            song: newSong,
+        });
     } catch (error) {
         logger.error("Lỗi khi thêm bài hát từ URL Youtube:", error);
         return sendError(res, 500, "Lỗi hệ thống.");
