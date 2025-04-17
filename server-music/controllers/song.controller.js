@@ -98,6 +98,8 @@ async function AddNewSongFromDevice(req, res) {
 async function AddNewSongFromYtUrl(req, res) {
     try {
         const { ytbURL } = req.body;
+
+        // Kiểm tra URL Youtube hợp lệ
         if (!ytbURL || !isValidURL(ytbURL)) {
             return sendError(res, 400, "URL Youtube không hợp lệ.");
         }
@@ -106,15 +108,21 @@ async function AddNewSongFromYtUrl(req, res) {
         // Lấy metadata qua noembed API
         const response = await fetch(`https://noembed.com/embed?url=${ytbURL}`);
         if (!response.ok) {
+            logger.error(
+                `Lỗi khi lấy thông tin từ YouTube: ${response.statusText}`
+            );
             return sendError(res, 500, "Lỗi khi lấy thông tin từ Youtube.");
         }
         const infoJson = await response.json();
 
+        // Kiểm tra dữ liệu trả về từ YouTube
         if (
+            !infoJson ||
             !infoJson.title ||
             !infoJson.thumbnail_url ||
             !infoJson.author_name
         ) {
+            logger.error("Dữ liệu trả về không đầy đủ từ YouTube.");
             return sendError(
                 res,
                 500,
@@ -126,18 +134,28 @@ async function AddNewSongFromYtUrl(req, res) {
         const thumbnailUrl = infoJson.thumbnail_url;
         const artistName = infoJson.author_name;
 
-        // // Tải file mp3
+        // Tải file mp3 từ YouTube
         const filePath = await downloadYoutubeAudio(ytbURL);
         if (!filePath) {
+            logger.error("Không thể tải bài hát từ YouTube.");
             return sendError(res, 500, "Không thể tải bài hát từ YouTube.");
         }
 
-        const songsStoragePath = path.join(__dirname, "..", "songs-storage");
+        const songsStoragePath = path.join(
+            __dirname,
+            "..",
+            "..",
+            "songs-storage"
+        );
         const slug = title
             .toLowerCase()
             .replace(/[^a-z0-9]/g, "-")
             .replace(/-+/g, "-");
+
+        // Đường dẫn lưu HLS
         const hlsOutputPath = path.join(songsStoragePath, "hls", slug);
+
+        // Chuyển đổi MP3 sang HLS
         await convertToHLS(filePath, hlsOutputPath);
 
         // Upload ảnh bìa lên Cloudinary
@@ -147,34 +165,35 @@ async function AddNewSongFromYtUrl(req, res) {
                 folder: "music_app/covers",
             });
         } catch (uploadError) {
-            console.error("Lỗi khi tải ảnh bìa lên Cloudinary:", uploadError);
+            logger.error("Lỗi khi tải ảnh bìa lên Cloudinary:", uploadError);
             return sendError(res, 500, "Lỗi khi tải ảnh bìa lên Cloudinary.");
         }
 
         // Tạo hoặc tìm nghệ sĩ và thể loại
-        const [artist] = await Artist.findOrCreate({
-            where: { name: artistName },
-            defaults: {
-                name: artistName,
-                profile_picture_url: thumbnailUrl,
-                biography: "Tự động từ Youtube",
-            },
-        });
+        // const artist = await Artist.findOrCreate({
+        //     where: { name: artistName },
+        //     defaults: { name: artistName },
+        // });
+        // if (!artist) {
+        //     logger.error("Không thể tìm thấy hoặc tạo nghệ sĩ.");
+        //     return sendError(res, 500, "Lỗi trong việc tạo nghệ sĩ.");
+        // }
 
-        const [genre] = await Genre.findOrCreate({
-            where: { name: "Youtube Auto" },
-            defaults: {
-                name: "Youtube Auto",
-                description: "Tự động từ Youtube",
-            },
-        });
-
+        // const genre = await Genre.findOrCreate({
+        //     where: { name: "Nhạc khác" }, // Thay thế bằng thể loại mặc định nếu không có
+        //     defaults: { name: "Nhạc khác" },
+        // });
+        // if (!genre) {
+        //     logger.error("Không thể tìm thấy hoặc tạo thể loại.");
+        //     return sendError(res, 500, "Lỗi trong việc tạo thể loại.");
+        // }
+        // Lưu bài hát vào cơ sở dữ liệu
         const newSong = await Song.create({
             title: title,
-            fileUrl: filePath,
+            fileUrl: `${hlsOutputPath}/index.m3u8`, // Lưu đường dẫn tới tệp HLS .m3u8
             coverUrl: result.secure_url,
-            genre_id: genre.id,
-            artist_id: artist.id,
+            // genre_id: genre.id,
+            // artist_id: artist.id,
             source: "YOUTUBE",
         });
 
