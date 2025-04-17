@@ -1,19 +1,17 @@
 // Song controllers
-
 const { Artist } = require("../models/artist.model");
 const { Genre } = require("../models/genre.model");
 const { Song } = require("../models/song.model");
 const logger = require("../util/logger");
 const { sendError, sendSuccess } = require("../util/response");
 const cloudinary = require("../config/cloudinary.config");
-const { exec } = require("child_process");
-const { v4: uuidv4 } = require("uuid");
 
 // Add song from device
 const fs = require("fs");
 const path = require("path");
 const { convertToHLS } = require("../util/hlsHelper");
 const { console } = require("inspector");
+const { downloadYoutubeAudio } = require("../util/youtubeHelpers");
 
 async function AddNewSongFromDevice(req, res) {
     try {
@@ -67,13 +65,14 @@ async function AddNewSongFromDevice(req, res) {
         const coverUrl = result.secure_url;
         fs.unlinkSync(songCover.path);
 
+        const songsStoragePath = path.join(__dirname, "..", "songs-storage");
         // 🔥 Convert to HLS
         const slug = songTitle
             .toLowerCase()
             .replace(/[^a-z0-9]/g, "-")
             .replace(/-+/g, "-");
 
-        const hlsOutputPath = `songs-storage/hls/${slug}`;
+        const hlsOutputPath = path.join(songsStoragePath, "hls", slug);
         await convertToHLS(songFile.path, hlsOutputPath);
 
         // ✅ Lưu dữ liệu
@@ -99,34 +98,61 @@ async function AddNewSongFromDevice(req, res) {
 async function AddNewSongFromYtUrl(req, res) {
     try {
         const { ytbURL } = req.body;
-        if (!ytbURL) return sendError(res, 400, "Thiếu URL Youtube.");
+        if (!ytbURL || !isValidURL(ytbURL)) {
+            return sendError(res, 400, "URL Youtube không hợp lệ.");
+        }
+        console.log("ytbURL:", ytbURL);
 
-        // Lấy metadata qua yt-dlp
-        const infoJson = await fetch(
-            `https://noembed.com/embed?url=${ytbURL}`
-        ).then((res) => res.json());
+        // Lấy metadata qua noembed API
+        const response = await fetch(`https://noembed.com/embed?url=${ytbURL}`);
+        if (!response.ok) {
+            return sendError(res, 500, "Lỗi khi lấy thông tin từ Youtube.");
+        }
+        const infoJson = await response.json();
+
+        if (
+            !infoJson.title ||
+            !infoJson.thumbnail_url ||
+            !infoJson.author_name
+        ) {
+            return sendError(
+                res,
+                500,
+                "Dữ liệu trả về không đầy đủ từ YouTube."
+            );
+        }
+
         const title = infoJson.title;
         const thumbnailUrl = infoJson.thumbnail_url;
         const artistName = infoJson.author_name;
 
-        // Tải file mp3
+        // // Tải file mp3
         const filePath = await downloadYoutubeAudio(ytbURL);
+        if (!filePath) {
+            return sendError(res, 500, "Không thể tải bài hát từ YouTube.");
+        }
 
-        // 🔽 Chuyển đổi sang HLS (.m3u8)
+        const songsStoragePath = path.join(__dirname, "..", "songs-storage");
         const slug = title
             .toLowerCase()
             .replace(/[^a-z0-9]/g, "-")
             .replace(/-+/g, "-");
-
-        const hlsOutputPath = `songs-storage/hls/${slug}`;
+        const hlsOutputPath = path.join(songsStoragePath, "hls", slug);
         await convertToHLS(filePath, hlsOutputPath);
 
-        // Upload ảnh bìa lên cloudinary
-        const result = await cloudinary.uploader.upload(thumbnailUrl, {
-            folder: "music_app/covers",
-        });
+        // Upload ảnh bìa lên Cloudinary
+        let result;
+        try {
+            result = await cloudinary.uploader.upload(thumbnailUrl, {
+                folder: "music_app/covers",
+            });
+        } catch (uploadError) {
+            console.error("Lỗi khi tải ảnh bìa lên Cloudinary:", uploadError);
+            return sendError(res, 500, "Lỗi khi tải ảnh bìa lên Cloudinary.");
+        }
 
-        const artist = await Artist.findOrCreate({
+        // Tạo hoặc tìm nghệ sĩ và thể loại
+        const [artist] = await Artist.findOrCreate({
             where: { name: artistName },
             defaults: {
                 name: artistName,
@@ -135,7 +161,7 @@ async function AddNewSongFromYtUrl(req, res) {
             },
         });
 
-        const genre = await Genre.findOrCreate({
+        const [genre] = await Genre.findOrCreate({
             where: { name: "Youtube Auto" },
             defaults: {
                 name: "Youtube Auto",
@@ -147,8 +173,8 @@ async function AddNewSongFromYtUrl(req, res) {
             title: title,
             fileUrl: filePath,
             coverUrl: result.secure_url,
-            genre_id: genre[0].id,
-            artist_id: artist[0].id,
+            genre_id: genre.id,
+            artist_id: artist.id,
             source: "YOUTUBE",
         });
 
@@ -161,6 +187,7 @@ async function AddNewSongFromYtUrl(req, res) {
         return sendError(res, 500, "Lỗi hệ thống.");
     }
 }
+
 // Get All songs
 async function GetAllSongs(req, res) {
     try {
@@ -357,28 +384,13 @@ async function FilterSongByGenre(req, res) {
     }
 }
 
-// Download Youtube audio
-
-async function downloadYoutubeAudio(url, outputDir = "songs-storage/original") {
-    return new Promise((resolve, reject) => {
-        const id = uuidv4();
-        const outputPath = path.join(outputDir, `${id}.mp3`);
-
-        // Tạo thư mục nếu chưa có
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir, { recursive: true });
-        }
-
-        const command = `"./yt-dlp.exe" --ffmpeg-location "C:/ffmpeg/bin" -x --audio-format mp3 -o "${outputPath}" "${url}"`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error("YT-DLP error:", stderr);
-                return reject(error);
-            }
-            resolve(outputPath);
-        });
-    });
+function isValidURL(url) {
+    try {
+        new URL(url); // Tạo một đối tượng URL từ chuỗi, nếu không hợp lệ sẽ ném lỗi
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 module.exports = {

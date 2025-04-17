@@ -25,3 +25,88 @@ ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide t
 WARNING: ffmpeg-location C:/ffmpeg/bin does not exist! Continuing without ffmpeg
 ERROR: expected string or bytes-like object
 
+[2025-04-16 21:15:27] ERROR: Lỗi khi thêm bài hát từ Youtube: Command failed: "./yt-dlp.exe" --ffmpeg-location "C:/ffmpeg/bin" -x --audio-format mp3 -o "songs-storage\original\39545980-3cfa-4d8e-a7a4-0eb4c8a98bfc.mp3" "https://youtu.be/YZGk-eVFnCc?si=UfHZA7RI8gWVHe0a"
+WARNING: ffmpeg-location C:/ffmpeg/bin does not exist! Continuing without ffmpeg
+ERROR: expected string or bytes-like object
+
+[2025-04-16 21:30:14] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:31:01] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:31:14] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:31:55] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:32:14] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:33:30] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:36:00] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:36:06] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:38:17] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:38:29] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:40:26] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:41:11] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:41:25] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:44:35] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:44:45] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:47:43] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:55:23] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:56:18] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:57:45] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:58:09] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:58:15] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 21:59:07] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:00:55] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:01:19] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:01:46] INFO: Lấy metadata từ Youtube:
+[2025-04-16 22:01:47] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:02:48] INFO: Lấy metadata từ Youtube:
+[2025-04-16 22:02:49] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:06:51] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:07:20] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:07:58] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:08:29] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:08:42] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:10:26] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:11:00] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot access 'infoJson' before initialization
+[2025-04-16 22:11:22] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:11:51] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:12:04] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:12:16] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:12:40] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:13:08] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:14:32] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:14:48] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:16:07] ERROR: Lỗi khi thêm bài hát từ Youtube: ytbURL is not defined
+[2025-04-16 22:18:44] ERROR: Lỗi khi thêm bài hát từ Youtube: YT-DLP error: ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
+
+[2025-04-16 22:21:26] ERROR: Lỗi khi thêm bài hát từ Youtube: YT-DLP error: '"G:\MyProject\MyFreeMusic\server-music\controllers\yt-dlp.exe"' is not recognized as an internal or external command,
+operable program or batch file.
+
+[2025-04-16 22:22:52] ERROR: Lỗi khi thêm bài hát từ Youtube: YT-DLP error: '"../yt-dlp.exe"' is not recognized as an internal or external command,
+operable program or batch file.
+
+[2025-04-16 22:23:55] ERROR: Lỗi khi thêm bài hát từ Youtube: YT-DLP error: WARNING: ffmpeg-location G:\MyProject\MyFreeMusic\server-music\controllers\ffmpeg-7.1.1-essentials_build\bin does not exist! Continuing without ffmpeg
+ERROR: expected string or bytes-like object
+
+[2025-04-16 22:26:10] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:27:26] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:28:26] INFO: ffmpegPath:
+[2025-04-16 22:28:35] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:28:47] INFO: ffmpegPath:
+[2025-04-16 22:28:56] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:29:57] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:32:38] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:32:50] INFO: FFmpeg Path:
+[2025-04-16 22:32:50] INFO: yt-dlp Path:
+[2025-04-16 22:32:59] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:33:22] INFO: FFmpeg Path:
+[2025-04-16 22:33:22] INFO: yt-dlp Path:
+[2025-04-16 22:33:31] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:34:06] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:36:37] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:38:25] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:40:04] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:41:51] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:44:22] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:46:37] ERROR: Lỗi khi thêm bài hát từ Youtube: Cannot find ffmpeg
+[2025-04-16 22:49:46] ERROR: Lỗi khi thêm bài hát từ Youtube: path is not defined
+[2025-04-16 22:50:17] ERROR: Lỗi khi thêm bài hát từ Youtube: ffmpeg exited with code 4294967294: Conversion failed!
+
+[2025-04-16 22:54:25] ERROR: Lỗi khi thêm bài hát từ Youtube: ffmpeg exited with code 4294967294: Conversion failed!
+
