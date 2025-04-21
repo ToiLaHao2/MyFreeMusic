@@ -30,4 +30,6 @@ module.exports = {
     User,
     Playlist,
     Song,
+    Genre,
+    Artist,
 };
